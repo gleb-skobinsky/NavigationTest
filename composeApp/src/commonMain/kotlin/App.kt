@@ -117,7 +117,7 @@ fun App() {
                             Button({ navController.popBackStack() }) {
                                 Text("Go back")
                             }
-                            Button({ navController.navigate("nested_screen1") }) {
+                            Button({ navController.navigate("nested") }) {
                                 Text("Go to nested")
                             }
                         }
