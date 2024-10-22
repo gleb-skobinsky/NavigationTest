@@ -27,6 +27,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.reflect.KClass
 
@@ -85,8 +86,8 @@ fun App() {
     MaterialTheme {
         FilledCenteredBox(Color.LightGray) {
             val navController = rememberNavController()
-            NavHost(navController, "start_screen") {
-                composable("start_screen") { entry ->
+            NavHost(navController, Screens.FirstScreen) {
+                composable<Screens.FirstScreen> { entry ->
                     val viewModel =
                         viewModel(
                             FirstScreenViewModel::class,
@@ -97,13 +98,14 @@ fun App() {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text(entry.destination.route.orEmpty())
                             TextField(viewModel.firstScreenInput, { viewModel.updateInput(it) })
-                            Button({ navController.navigate("second_screen") }) {
+                            Button({ navController.navigate(Screens.SecondScreen("Custom param")) }) {
                                 Text("Go forward")
                             }
                         }
                     }
                 }
-                composable("second_screen") { entry ->
+                composable<Screens.SecondScreen> { entry ->
+                    val route = entry.toRoute<Screens.SecondScreen>()
                     val viewModel =
                         viewModel(
                             SecondScreenViewModel::class,
@@ -113,18 +115,22 @@ fun App() {
                     FilledCenteredBox(Color.Yellow) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text(entry.destination.route.orEmpty())
+                            Text(route.parameter)
                             TextField(viewModel.secondScreenInput, { viewModel.updateInput(it) })
                             Button({ navController.popBackStack() }) {
                                 Text("Go back")
                             }
-                            Button({ navController.navigate("nested") }) {
+                            Button({ navController.navigate(Screens.NestedFlow) }) {
                                 Text("Go to nested")
                             }
                         }
                     }
                 }
-                navigation("nested_screen1", "nested") {
-                    composable("nested_screen1") { entry ->
+                navigation(
+                    startDestination = Screens.NestedFlow.FirstNestedScreen,
+                    route = Screens.NestedFlow::class
+                ) {
+                    composable<Screens.NestedFlow.FirstNestedScreen> { entry ->
                         val sharedViewModel: FirstScreenViewModel =
                             entry.sharedViewModel(navController, FirstScreenViewModel.Factory)
                         FilledCenteredBox(UtilColors.Wheat) {
@@ -136,13 +142,13 @@ fun App() {
                                 Button({ navController.popBackStack() }) {
                                     Text("Go back")
                                 }
-                                Button({ navController.navigate("nested_screen2") }) {
+                                Button({ navController.navigate(Screens.NestedFlow.SecondNestedScreen) }) {
                                     Text("Go to nested 2")
                                 }
                             }
                         }
                     }
-                    composable("nested_screen2") { entry ->
+                    composable<Screens.NestedFlow.SecondNestedScreen> { entry ->
                         val sharedViewModel: FirstScreenViewModel =
                             entry.sharedViewModel(navController, FirstScreenViewModel.Factory)
                         FilledCenteredBox(UtilColors.LightBlue) {
@@ -178,7 +184,11 @@ inline fun <reified VM : ViewModel> NavBackStackEntry.sharedViewModel(
             this
         }
     }
-    return viewModel(modelClass = VM::class, viewModelStoreOwner = parentEntry, factory = factory)
+    return viewModel(
+        modelClass = VM::class,
+        viewModelStoreOwner = parentEntry,
+        factory = factory
+    )
 }
 
 @Composable
